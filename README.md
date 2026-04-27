@@ -10,9 +10,9 @@
 
 ## 📌 Introduction
 
-`fox-vault` is a minimalist CLI tool for file encryption. It follows the philosophy of building tools that are hard to misuse and easy to trust.
+`fox-vault` is a minimalist CLI tool for file encryption using modern cryptography.
 
-No complex configurations. No cloud sync. Just industry-standard cryptography.
+No complex configurations. No cloud sync. Just secure, local encryption.
 
 ---
 
@@ -20,19 +20,19 @@ No complex configurations. No cloud sync. Just industry-standard cryptography.
 
 * No insecure modes or configuration footguns
 * No external dependencies or services
-* Uses modern, audited cryptographic primitives by default
-* Designed for local, deliberate encryption workflows
+* Uses modern, audited cryptographic primitives
+* Designed for local, deliberate workflows
 
 ---
 
 ## ✨ Features
 
-* **Hard to Misuse:** Uses **XChaCha20-Poly1305** and **Argon2id** by default—no algorithm selection needed
-* **Tamper Evident:** AEAD ensures decryption fails if data is modified or password is incorrect
-* **Memory Safe:** Best-effort zeroing of sensitive data after use
+* **Hard to Misuse:** XChaCha20-Poly1305 + Argon2id
+* **Tamper Evident:** AEAD prevents silent corruption
+* **Memory Safe:** Best-effort zeroing of sensitive data
 * **Zero Config:** Single static binary
-* **Practical UX:** Password masking + confirmation
-* **Safe by Default:** Refuses to overwrite existing files
+* **Safe Defaults:** Refuses to overwrite files
+* **Flexible Decryption:** Safe (`unlock`) and destructive (`burn`) modes
 
 ---
 
@@ -40,24 +40,19 @@ No complex configurations. No cloud sync. Just industry-standard cryptography.
 
 ### Pre-built Binaries
 
-Download the latest release from:
 👉 [https://github.com/foxhackerzdevs/fox-vault/releases](https://github.com/foxhackerzdevs/fox-vault/releases)
 
-### Verify Checksums
+---
 
-Always verify downloads before running:
+### Verify Checksums
 
 ```bash
 sha256sum -c fox-v1.0.0-linux-amd64.sha256
 ```
 
-Checksums are published alongside releases.
-
 ---
 
 ### Install via Go
-
-Requires Go 1.21+
 
 ```bash
 go install github.com/foxhackerzdevs/fox-vault@latest
@@ -77,34 +72,54 @@ go build -trimpath -ldflags="-s -w" -o fox main.go
 
 ## 🛠 Usage
 
-### Encrypt a file
-
-Creates `secret.txt.fox`. Refuses to overwrite existing files.
+### 🔐 Encrypt
 
 ```bash
 ./fox -m lock -f secret.txt
 ```
 
----
+Creates:
 
-### View (decrypt) a file
-
-Prints decrypted content to stdout:
-
-```bash
-./fox -m view -f secret.txt.fox
 ```
-
-Recommended usage:
-
-```bash
-./fox -m view -f secret.txt.fox | less
-./fox -m view -f secret.txt.fox > decrypted.txt
+secret.txt.fox
 ```
 
 ---
 
-### Check version
+### 🔓 Decrypt (safe)
+
+```bash
+./fox -m unlock -f secret.txt.fox
+```
+
+* Prints decrypted content to stdout
+* Does **NOT** delete the file
+
+Recommended:
+
+```bash
+./fox -m unlock -f file.fox | less
+./fox -m unlock -f file.fox > output.txt
+```
+
+---
+
+### 🔥 Decrypt + Delete (burn)
+
+```bash
+./fox -m burn -f secret.txt.fox
+```
+
+* Decrypts file
+* Prints content
+* Prompts before deletion
+* Deletes encrypted file after confirmation
+
+⚠️ **This operation is destructive**
+
+---
+
+### 📦 Version
 
 ```bash
 ./fox -v
@@ -117,37 +132,49 @@ Recommended usage:
 * `0` Success
 * `1` General error
 * `2` Invalid arguments
-* `3` Decryption failed (wrong password or corrupted file)
+* `3` Decryption failed
 
 ---
 
 ## 🔒 Security Specs
 
 * **KDF:** Argon2id (`Time=3`, `Memory=256MB`, `Threads=4`)
-* **Encryption:** XChaCha20-Poly1305 (24-byte nonce)
-* **File Format:**
-  `[1-byte Version] [16-byte Salt] [24-byte Nonce] [Ciphertext]`
-* **Password Input:** Secure input via terminal (never CLI args)
+* **Encryption:** XChaCha20-Poly1305
+* **Nonce:** 24 bytes
+
+**File Format:**
+
+```
+[1-byte Version][16-byte Salt][24-byte Nonce][Ciphertext]
+```
+
+* **Password Input:** Secure terminal input
 * **File Permissions:** `0600`
 
 ---
 
 ## ⚠️ What fox-vault is NOT
 
-* Not for plausible deniability (files are obviously encrypted)
-* Not for hiding filenames (`secret.txt.fox` still reveals name)
-* Not for very large files (entire file is loaded into memory; practical limit depends on available RAM, recommended <1GB)
-* Not a replacement for full-disk encryption
+* Not for plausible deniability
+* Not for hiding filenames
+* Not for very large files (RAM-bound, recommended <1GB)
 * Not a password manager
 * No password recovery — lost password = lost data
+
+---
+
+## ⚠️ Secure Deletion Warning
+
+The `burn` mode uses overwrite + delete.
+
+❗ On SSDs and modern filesystems, secure deletion is **not guaranteed**.
 
 ---
 
 ## 🏗 Building from Source
 
 ```bash
-go get golang.org/x/crypto@latest
-go get golang.org/x/term@latest
+go mod tidy
 go build -trimpath -ldflags="-s -w -X main.version=dev" -o fox main.go
 ```
 
@@ -155,16 +182,18 @@ go build -trimpath -ldflags="-s -w -X main.version=dev" -o fox main.go
 
 ## 🔁 Reproducible Builds
 
-Builds use `-trimpath` and stripped binaries to improve reproducibility.
+Uses:
+
+* `-trimpath`
+* stripped binaries (`-s -w`)
 
 ---
 
 ## 🗺 Roadmap
 
-* [ ] `-delete` flag to securely wipe original file
-* [ ] Streaming support for large files (>1GB)
-* [ ] Output file support:
-  `fox -m unlock -f file.fox -o output`
+* [ ] Replace `burn` with `--delete` flag
+* [ ] Streaming support (>1GB files)
+* [ ] Output file support (`-o output.txt`)
 
 ---
 
@@ -176,15 +205,17 @@ MIT License — see [LICENSE](LICENSE)
 
 ## ⚠️ Disclaimer
 
-This software is provided **"as is"**, without warranty of any kind.
+This software is provided **"as is"**.
 
-You are responsible for managing your passwords securely.
-There are no backdoors—if you lose your password, your data is permanently unrecoverable.
+* No warranty
+* No recovery
+* No guarantees
+
+You are responsible for your data and passwords.
 
 ---
 
 ## 👥 Contributors
 
 Built by [https://github.com/foxhackerzdevs](https://github.com/foxhackerzdevs)
-Pull requests are welcome.
-
+Pull requests welcome.

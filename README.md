@@ -47,7 +47,7 @@ No complex configurations. No cloud sync. Just secure, local encryption.
 ### Verify Checksums
 
 ```bash
-sha256sum -c fox-v1.0.0-linux-amd64.sha256
+sha256sum -c fox-v1.0.1-linux-amd64.sha256
 ```
 
 ---

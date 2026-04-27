@@ -15,17 +15,18 @@ import (
 )
 
 const (
-	fileExt       = ".fox"
-	saltLen       = 16
-	keyLen        = 32
-	formatVer     = 0x01
-	argonTime     = 3
-	argonMemory   = 256 * 1024
-	argonThreads  = 4
+	fileExt      = ".fox"
+	saltLen      = 16
+	keyLen       = 32
+	formatVer    = 0x01
+	argonTime    = 3
+	argonMemory  = 256 * 1024
+	argonThreads = 4
 )
 
 var (
-	version = "1.0.0"
+	// version is set via ldflags in GitHub Actions, but 1.0.1 is the fallback
+	version = "1.0.1"
 
 	ErrInvalidFile   = errors.New("invalid or corrupted file")
 	ErrWrongPassword = errors.New("decryption failed: wrong password or corrupted file")
@@ -260,3 +261,4 @@ func main() {
 		}
 	}
 }
+
